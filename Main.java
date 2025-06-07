@@ -54,6 +54,49 @@ public class Main extends Application {
 
         PageLoader.loadMainPage();
 
+        // Apply stylesheet
+        if (Main.scene != null) {
+            try {
+                String cssUri = getClass().getResource("styles.css").toExternalForm();
+                Main.scene.getStylesheets().add(cssUri);
+            } catch (NullPointerException e) {
+                System.err.println("Error loading styles.css: Make sure it's in the correct path (src/com/binge/styles.css).");
+                e.printStackTrace();
+            }
+        } else {
+            System.err.println("Main.scene was null after PageLoader.loadMainPage(). Attempting to create a default scene.");
+            Main.scene = new Scene(pane, WINDOW_WIDTH, WINDOW_HEIGHT); // pane should be initialized
+            try {
+                String cssUri = getClass().getResource("styles.css").toExternalForm();
+                Main.scene.getStylesheets().add(cssUri);
+            } catch (NullPointerException e) {
+                System.err.println("Error loading styles.css for default scene: Make sure it's in the correct path (src/com/binge/styles.css).");
+                e.printStackTrace();
+            }
+        }
+
+        // Temporary check for background color
+        if (Main.scene != null && Main.scene.getRoot() != null) {
+            // Ensure the scene has a root node (it should be the 'pane')
+            // We need to check the style of the root node of the scene.
+            // The .root style class applies to the root node of the Scene.
+            // To verify, we can print out the styles applied or query the background property
+            // if it's directly set on the root node (e.g. pane).
+            // For CSS applied via .root, it's best to check if the stylesheet is loaded
+            // and assume it works, or take a screenshot if possible.
+            // Programmatic check of -fx-background-color applied via CSS is non-trivial.
+            // For now, let's just print a confirmation that the stylesheet is loaded.
+            if (!Main.scene.getStylesheets().isEmpty()) {
+                System.out.println("Stylesheet " + Main.scene.getStylesheets().get(0) + " loaded.");
+                System.out.println("Assuming .root background color #1E1E1E is applied from styles.css.");
+                System.out.println("Manual verification of the application's visual output is required to confirm the background color.");
+            } else {
+                System.out.println("No stylesheets found on the scene.");
+            }
+        } else {
+            System.out.println("Scene or scene root is null, cannot verify stylesheet application directly via code print.");
+        }
+
 //        scene = new Scene(pane, WINDOW_WIDTH, WINDOW_HEIGHT);
         stage.setScene(scene);
         stage.setTitle("Ball");
