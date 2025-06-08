@@ -27,3 +27,10 @@ SpinningLaserObstacle
 200 200 200 45 -45 0.5
 # Spinning Laser 3: Pivot at one edge of screen, make it long (non-pulsing by omission)
 0 400 600 0 30 1.0
+
+TrackingLaserObstacle
+# Format: emitterX emitterY rotationSpeedDeg detectionRange beamLength chargeSecs fireSecs cooldownSecs [initialAngleDeg]
+# Tracking Laser 1: Mid-right, moderate stats
+900 400 45 300 400 1.0 0.5 2.0 0
+# Tracking Laser 2: Top-center, fast rotation, shorter range/beam, different timings
+600 150 90 200 250 0.5 0.3 1.5 270

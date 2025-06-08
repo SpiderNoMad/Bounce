@@ -3,6 +3,7 @@ package com.binge;
 import com.binge.LaserObstacle;
 import com.binge.LaserObstacle.LaserOrientation;
 import com.binge.SpinningLaserObstacle;
+import com.binge.TrackingLaserObstacle;
 import java.io.*;
 import java.util.Random;
 
@@ -122,7 +123,7 @@ public class PageLoader {
                 } else if (line.equals("initial position") ||line.equals("CircleObstacle") ||
                         line.equals("RectangleObstacle") || line.equals("Coin") ||
                         line.equals("SizeShifter") || line.equals("GrapplePoint") || line.equals("Checkpoint") ||
-                        line.equals("CircleTrap") || line.equals("Goal") || line.equals("Lock") || line.equals("LaserObstacle") || line.equals("VerticalLaserObstacle") || line.equals("SpinningLaserObstacle")) {
+                        line.equals("CircleTrap") || line.equals("Goal") || line.equals("Lock") || line.equals("LaserObstacle") || line.equals("VerticalLaserObstacle") || line.equals("SpinningLaserObstacle") || line.equals("TrackingLaserObstacle")) {
                     section = line;
                 } else {
                     String[] tokens = line.split("\\s+");
@@ -351,6 +352,39 @@ public class PageLoader {
                                         isPulsingSpin, minThicknessSpin, maxThicknessSpin, pulseDurationSpin // New params
                                 );
                                 sublevel.obstacles.add(spinningLaser);
+                            }
+                            break;
+                        case "TrackingLaserObstacle":
+                            // Expected format: emitterX emitterY rotationSpeedDeg detectionRange beamLength chargeSecs fireSecs cooldownSecs [initialAngleDeg]
+                            if (tokens.length >= 8) {
+                                double emitterX = Double.parseDouble(tokens[0]);
+                                double emitterY = Double.parseDouble(tokens[1]);
+                                double rotationSpeedDeg = Double.parseDouble(tokens[2]);
+                                double detectionRange = Double.parseDouble(tokens[3]);
+                                double beamLength = Double.parseDouble(tokens[4]);
+                                double chargeSecs = Double.parseDouble(tokens[5]);
+                                double fireSecs = Double.parseDouble(tokens[6]);
+                                double cooldownSecs = Double.parseDouble(tokens[7]);
+
+                                double initialAngleDeg = 0.0; // Default initial angle
+                                if (tokens.length >= 9) {
+                                    initialAngleDeg = Double.parseDouble(tokens[8]);
+                                }
+
+                                Point2D emitterPos = new Point2D(emitterX, emitterY);
+
+                                TrackingLaserObstacle trackingLaser = new TrackingLaserObstacle(
+                                        sublevel.pane,
+                                        emitterPos,
+                                        rotationSpeedDeg,
+                                        detectionRange,
+                                        beamLength,
+                                        chargeSecs,
+                                        fireSecs,
+                                        cooldownSecs,
+                                        initialAngleDeg
+                                );
+                                sublevel.obstacles.add(trackingLaser);
                             }
                             break;
                     }
