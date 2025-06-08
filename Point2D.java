@@ -37,9 +37,19 @@ public class Point2D {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
 
+    public double magnitudeSquared() {
+        return this.x * this.x + this.y * this.y;
+    }
+
     double getDistance(Point2D p) {
         Point2D dis = new Point2D(this.x - p.x, this.y - p.y);
         return dis.magnitude();
+    }
+
+    public double distanceSquared(Point2D other) {
+        double dx = this.x - other.x;
+        double dy = this.y - other.y;
+        return dx * dx + dy * dy;
     }
 
     double dot(Point2D p) {
