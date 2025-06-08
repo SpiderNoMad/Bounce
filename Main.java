@@ -139,6 +139,11 @@ public class Main extends Application {
         character.v.setX(Math.max(-MAX_MOVE_SPEED, Math.min(character.v.getX(), MAX_MOVE_SPEED)));
         character.v.setY(Math.max(-MAX_MOVE_SPEED, Math.min(character.v.getY(), MAX_MOVE_SPEED))); // MAX_MOVE_SPEED for Y might be very high
 
+        // Update all obstacles (e.g., for animations like blinking lasers)
+        for (Obstacle obs : currentSublevel.obstacles) {
+            obs.update(FIXED_PHYSICS_DT); // Use the fixed delta time
+        }
+
         // 3. Collision Detection and Resolution with Obstacles
         boolean characterCollidedWithObstacle = false;
         for (Obstacle obs : currentSublevel.obstacles) {

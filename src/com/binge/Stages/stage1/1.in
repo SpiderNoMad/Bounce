@@ -1,0 +1,29 @@
+initial position
+100 100
+
+LaserObstacle
+# Format: yPos startX endX [initialTimerOffset] [isPulsing minThick maxThick pulseDur]
+# Laser 1: Pulsing
+200 100 500 0.0 1 1.0 6.0 2.0
+# Laser 2: Lower part of screen, different timing (non-pulsing by omission)
+600 300 700 1.0
+# Laser 3: Another one for testing different position and length (non-pulsing by omission)
+350 50 600 0.5
+# NEW LASER EXAMPLE: Explicitly non-pulsing
+750 400 600 1.5 0
+
+VerticalLaserObstacle
+# Format: xPos startY endY [initialTimerOffset] [isPulsing minThick maxThick pulseDur]
+# Vertical Laser 1: Pulsing with default range
+150 100 400 0.0 1
+# Vertical Laser 2: Right side, different timing and length (non-pulsing by omission)
+1050 200 600 1.25
+
+SpinningLaserObstacle
+# Format: pivotX pivotY length initialAngleDeg rotationSpeedDegPerSec [timerOffset] [isPulsing minThick maxThick pulseDur]
+# Spinning Laser 1: Pulsing
+600 400 300 0 90 0.0 1 2.0 7.0 1.5
+# Spinning Laser 2: Top-left, shorter, spins 45deg/sec counter-clockwise (non-pulsing by omission)
+200 200 200 45 -45 0.5
+# Spinning Laser 3: Pivot at one edge of screen, make it long (non-pulsing by omission)
+0 400 600 0 30 1.0

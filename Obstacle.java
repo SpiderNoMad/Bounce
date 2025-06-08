@@ -20,6 +20,8 @@ public abstract class Obstacle {
     // For more complex shapes like rotated rectangles, it's often better for checkCollision
     // to determine the normal and penetration, then call a more generic handler.
     // abstract void handleCollision(Character c, double deltaTime); // This might be removed or changed
+
+    public abstract void update(double deltaTime);
 }
 
 class CircleObstacle extends Obstacle {
@@ -76,6 +78,11 @@ class CircleObstacle extends Obstacle {
             double restitution = Main.FRICTION; // Use global friction as restitution
             c.v.add(-normal.getX() * (1 + restitution) * vDotN, -normal.getY() * (1 + restitution) * vDotN);
         }
+    }
+
+    @Override
+    public void update(double deltaTime) {
+        // No active update logic needed for this obstacle type
     }
 }
 
@@ -227,6 +234,11 @@ class RectangleObstacle extends Obstacle {
             c.v.setY(newVy);
         }
     }
+
+    @Override
+    public void update(double deltaTime) {
+        // No active update logic needed for this obstacle type
+    }
 }
 
 class CutOffObstacle extends Obstacle {
@@ -247,4 +259,9 @@ class CutOffObstacle extends Obstacle {
 
     // No specific handleCollision defined for CutOffObstacle yet.
     // If it were to be used, it would need its own collision response.
+
+    @Override
+    public void update(double deltaTime) {
+        // No active update logic needed for this obstacle type
+    }
 }
