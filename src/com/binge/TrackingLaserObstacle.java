@@ -159,30 +159,60 @@ public class TrackingLaserObstacle extends Obstacle {
                 if (stateTimerSecs >= chargeDurationSecs) {
                     currentState = LaserState.FIRING;
                     stateTimerSecs = 0.0;
-                    isBeamActive = true;
+                    isBeamActive = true; // Mark beam as active
 
-                    laserFireTargetPoint = new Point2D(
-                        emitterPosition.getX() + fireBeamLength * Math.cos(currentAngleRadians),
-                        emitterPosition.getY() + fireBeamLength * Math.sin(currentAngleRadians)
-                    );
-
-                    laserBeamBody.setStartX(emitterPosition.getX());
-                    laserBeamBody.setStartY(emitterPosition.getY());
-                    laserBeamBody.setEndX(laserFireTargetPoint.getX());
-                    laserBeamBody.setEndY(laserFireTargetPoint.getY());
-
+                    // Initial beam setup will happen in the first frame of FIRING state.
+                    // Just ensure visibility and color are set here.
                     laserBeamBody.setVisible(true);
-                    this.emitterBody.setFill(FIRE_COLOR); // Emitter color during firing
+                    this.emitterBody.setFill(FIRE_COLOR);
                 }
                 break;
 
             case FIRING:
+                // Aiming logic (similar to TRACKING state)
+                if (Main.character != null && Main.character.pos != null) {
+                    Point2D playerPosFiring = Main.character.pos;
+                    double dxFiring = playerPosFiring.getX() - emitterPosition.getX();
+                    double dyFiring = playerPosFiring.getY() - emitterPosition.getY();
+                    double targetAngleRadiansFiring = Math.atan2(dyFiring, dxFiring);
+
+                    double angleDiffFiring = targetAngleRadiansFiring - currentAngleRadians;
+                    while (angleDiffFiring > Math.PI) angleDiffFiring -= 2 * Math.PI;
+                    while (angleDiffFiring < -Math.PI) angleDiffFiring += 2 * Math.PI;
+
+                    double maxRotationFiring = rotationSpeedRadiansPerSec * deltaTime;
+                    if (Math.abs(angleDiffFiring) < maxRotationFiring) {
+                        currentAngleRadians = targetAngleRadiansFiring;
+                    } else {
+                        currentAngleRadians += Math.signum(angleDiffFiring) * maxRotationFiring;
+                    }
+                    currentAngleRadians = (currentAngleRadians + 2 * Math.PI) % (2 * Math.PI);
+                }
+                // If character is null, laser continues firing at last known angle.
+
+                // Update laser beam path based on current (possibly new) angle
+                this.laserFireTargetPoint = new Point2D(
+                    this.emitterPosition.getX() + this.fireBeamLength * Math.cos(this.currentAngleRadians),
+                    this.emitterPosition.getY() + this.fireBeamLength * Math.sin(this.currentAngleRadians)
+                );
+
+                this.laserBeamBody.setStartX(this.emitterPosition.getX());
+                this.laserBeamBody.setStartY(this.emitterPosition.getY());
+                this.laserBeamBody.setEndX(this.laserFireTargetPoint.getX());
+                this.laserBeamBody.setEndY(this.laserFireTargetPoint.getY());
+                // ensure laserBeamBody is visible (already set when entering FIRING, but good for safety)
+                if (!this.laserBeamBody.isVisible()) {
+                    this.laserBeamBody.setVisible(true);
+                }
+
+
+                // Check duration
                 if (stateTimerSecs >= fireDurationSecs) {
                     currentState = LaserState.COOLDOWN;
                     stateTimerSecs = 0.0;
                     isBeamActive = false;
                     laserBeamBody.setVisible(false);
-                    this.emitterBody.setFill(IDLE_COLOR); // Or a specific COOLDOWN_COLOR
+                    this.emitterBody.setFill(IDLE_COLOR);
                 }
                 break;
 

@@ -4,6 +4,7 @@ import com.binge.LaserObstacle;
 import com.binge.LaserObstacle.LaserOrientation;
 import com.binge.SpinningLaserObstacle;
 import com.binge.TrackingLaserObstacle;
+import com.binge.HomingMissileLauncherObstacle;
 import java.io.*;
 import java.util.Random;
 
@@ -123,7 +124,7 @@ public class PageLoader {
                 } else if (line.equals("initial position") ||line.equals("CircleObstacle") ||
                         line.equals("RectangleObstacle") || line.equals("Coin") ||
                         line.equals("SizeShifter") || line.equals("GrapplePoint") || line.equals("Checkpoint") ||
-                        line.equals("CircleTrap") || line.equals("Goal") || line.equals("Lock") || line.equals("LaserObstacle") || line.equals("VerticalLaserObstacle") || line.equals("SpinningLaserObstacle") || line.equals("TrackingLaserObstacle")) {
+                        line.equals("CircleTrap") || line.equals("Goal") || line.equals("Lock") || line.equals("LaserObstacle") || line.equals("VerticalLaserObstacle") || line.equals("SpinningLaserObstacle") || line.equals("TrackingLaserObstacle") || line.equals("HomingMissileLauncherObstacle")) {
                     section = line;
                 } else {
                     String[] tokens = line.split("\\s+");
@@ -385,6 +386,45 @@ public class PageLoader {
                                         initialAngleDeg
                                 );
                                 sublevel.obstacles.add(trackingLaser);
+                            }
+                            break;
+                        case "HomingMissileLauncherObstacle":
+                            // Expected format: emitterX emitterY rotSpeedDeg detectRange lockonSecs fireInterval volleySize cooldownSecs projSpeed projTurnRateDeg projLifespan [initialAngleDeg]
+                            if (tokens.length >= 11) { // 11 mandatory parameters
+                                double emitterX = Double.parseDouble(tokens[0]);
+                                double emitterY = Double.parseDouble(tokens[1]);
+                                double rotSpeedDeg = Double.parseDouble(tokens[2]);
+                                double detectRange = Double.parseDouble(tokens[3]);
+                                double lockonSecs = Double.parseDouble(tokens[4]);
+                                double fireInterval = Double.parseDouble(tokens[5]);
+                                int volleySize = Integer.parseInt(tokens[6]);
+                                double cooldownSecs = Double.parseDouble(tokens[7]);
+                                double projSpeed = Double.parseDouble(tokens[8]);
+                                double projTurnRateDeg = Double.parseDouble(tokens[9]);
+                                double projLifespan = Double.parseDouble(tokens[10]);
+
+                                double initialAngleDeg = 0.0; // Default initial angle
+                                if (tokens.length >= 12) {
+                                    initialAngleDeg = Double.parseDouble(tokens[11]);
+                                }
+
+                                Point2D emitterPos = new Point2D(emitterX, emitterY);
+
+                                HomingMissileLauncherObstacle launcher = new HomingMissileLauncherObstacle(
+                                        sublevel.pane, // Pass the sublevel's pane
+                                        emitterPos,
+                                        rotSpeedDeg,
+                                        detectRange,
+                                        lockonSecs,
+                                        fireInterval,
+                                        volleySize,
+                                        cooldownSecs,
+                                        projSpeed,
+                                        projTurnRateDeg,
+                                        projLifespan,
+                                        initialAngleDeg
+                                );
+                                sublevel.obstacles.add(launcher);
                             }
                             break;
                     }

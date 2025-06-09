@@ -1,5 +1,6 @@
 package com.binge;
 
+import com.binge.HomingLaserProjectile;
 import javafx.animation.Animation;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
@@ -36,6 +37,7 @@ public class Main extends Application {
     // containers
     public static Level currentLevel = new Level(0);
     public static Sublevel currentSublevel = new Sublevel(0);
+    public static ArrayList<HomingLaserProjectile> activeProjectiles = new ArrayList<>();
 
     // For fixed timestep physics
     public static Timeline timeline;
@@ -199,6 +201,28 @@ public class Main extends Application {
         if (currentSublevel.goal != null) {
             currentSublevel.goal.checkCollision(character, 0, 0, Main.FIXED_PHYSICS_DT);
         }
+
+        // --- Homing Laser Projectile Update and Collision ---
+        Iterator<HomingLaserProjectile> projectileIterator = activeProjectiles.iterator();
+        while (projectileIterator.hasNext()) {
+            HomingLaserProjectile projectile = projectileIterator.next();
+            projectile.update(FIXED_PHYSICS_DT); // FIXED_PHYSICS_DT is from Main class
+
+            if (!projectile.isActive()) { // Check if projectile deactivated itself (e.g. lifespan)
+                projectile.removeFromPane(); // Assumes projectile knows its pane
+                projectileIterator.remove();
+                continue; // Move to next projectile
+            }
+
+            if (projectile.checkCollisionWithPlayer(character)) {
+                // Projectile's checkCollisionWithPlayer already sets itself inactive
+                character.revive(); // Player is hit
+                projectile.removeFromPane(); // Ensure it's removed visually
+                projectileIterator.remove();
+                // Potentially add sound effect or particle effect for explosion here
+            }
+        }
+        // --- End Homing Laser Projectile ---
 
         // 6. Update position IF NO OBSTACLE COLLISION handled position
         // If an obstacle collision occurred, its handleCollision should have set the correct position.
