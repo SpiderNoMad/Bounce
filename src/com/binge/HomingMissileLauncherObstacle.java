@@ -27,6 +27,8 @@ public class HomingMissileLauncherObstacle extends Obstacle {
     int projectilesFiredThisVolley;
     double cooldownDurationSecs;
 
+    double spreadAngleRadians; // Total angle of the cone for the spread, stored in radians
+
     LauncherState currentState;
     double stateTimerSecs;
 
@@ -48,22 +50,27 @@ public class HomingMissileLauncherObstacle extends Obstacle {
     public HomingMissileLauncherObstacle(
             Pane pane, Point2D emitterPos,
             double rotationSpeedDeg, double detectionRange,
-            double lockonSecs, double fireInterval, int volleySize, double cooldownSecs,
+            double lockonSecs,
+            double fireInterval, // Keep for now, though might be unused by basic spread
+            int numProjectilesInSpread, // Formerly volleySize
+            double spreadAngleDegParam,  // New parameter
+            double cooldownSecs,
             double projSpeed, double projTurnRateDeg, double projLifespan,
             double initialAngleDegrees) {
 
-        this.obstaclePane = pane; // Store the pane for adding projectiles
+        this.obstaclePane = pane;
         this.emitterPosition = emitterPos;
-        this.pos = emitterPos; // Obstacle base position
+        this.pos = emitterPos;
 
         this.currentAngleRadians = Math.toRadians(initialAngleDegrees);
         this.rotationSpeedRadiansPerSec = Math.toRadians(rotationSpeedDeg);
         this.detectionRangeSq = detectionRange * detectionRange;
 
         this.lockonDurationSecs = lockonSecs;
-        this.fireIntervalSecs = fireInterval; // Min time between shots in a volley
-        this.projectilesPerVolley = Math.max(1, volleySize); // Must fire at least 1
-        this.projectilesFiredThisVolley = 0;
+        this.fireIntervalSecs = fireInterval; // Store it, might be used if volley > 1 spread, or for single shots
+        this.projectilesPerVolley = Math.max(1, numProjectilesInSpread); // Use this for spread count
+        this.spreadAngleRadians = Math.toRadians(spreadAngleDegParam); // Store new param
+        this.projectilesFiredThisVolley = 0; // Reset for volley logic
         this.cooldownDurationSecs = cooldownSecs;
 
         this.projectileSpeed = projSpeed;
@@ -149,36 +156,57 @@ public class HomingMissileLauncherObstacle extends Obstacle {
                 break;
 
             case FIRING:
-                // Emitter color can remain LOCKON_COLOR or change to a FIRING_COLOR
-                // For now, FIRING state is about managing the volley.
-                if (projectilesFiredThisVolley < projectilesPerVolley) {
-                    if (stateTimerSecs >= fireIntervalSecs || projectilesFiredThisVolley == 0) { // Fire first shot immediately, then use interval
-                        Point2D initialDir = new Point2D(Math.cos(currentAngleRadians), Math.sin(currentAngleRadians));
+                // This state now fires the entire spread at once, then transitions.
+                // The 'fireIntervalSecs' and 'projectilesFiredThisVolley' would be used if firing
+                // multiple individual projectiles sequentially within this FIRING state.
+                // For a simultaneous spread, we fire all and then cooldown.
 
+                if (projectilesFiredThisVolley == 0) { // Ensure this block runs only once per FIRING state entry
+                    double centerAngle = this.currentAngleRadians; // Aimed direction
+                    int numToFire = this.projectilesPerVolley;
+
+                    if (numToFire == 1) {
+                        // Fire a single projectile straight ahead
+                        Point2D initialDir = new Point2D(Math.cos(centerAngle), Math.sin(centerAngle));
                         HomingLaserProjectile projectile = new HomingLaserProjectile(
-                                this.obstaclePane, // Use the stored pane
-                                new Point2D(this.emitterPosition.getX(), this.emitterPosition.getY()), // Ensure new Point2D for start pos
+                                this.obstaclePane,
+                                new Point2D(this.emitterPosition.getX(), this.emitterPosition.getY()),
                                 initialDir,
                                 this.projectileSpeed,
                                 this.projectileTurnRateDeg,
                                 this.projectileLifespanSecs,
-                                Main.character // Target the main character
+                                Main.character
                         );
-                        Main.activeProjectiles.add(projectile); // Add to global list for updates
+                        Main.activeProjectiles.add(projectile);
+                    } else {
+                        double angleStep = this.spreadAngleRadians / (numToFire - 1);
+                        double startAngle = centerAngle - this.spreadAngleRadians / 2.0;
 
-                        projectilesFiredThisVolley++;
-                        stateTimerSecs = 0.0; // Reset timer for next shot in volley or for state transition
-
-                        if (projectilesFiredThisVolley >= projectilesPerVolley) {
-                             // If volley complete, immediately move to COOLDOWN
-                            currentState = LauncherState.COOLDOWN;
-                            // stateTimerSecs is already 0.0 for COOLDOWN's start
+                        for (int i = 0; i < numToFire; i++) {
+                            double fireAngle = startAngle + (i * angleStep);
+                            Point2D initialDir = new Point2D(Math.cos(fireAngle), Math.sin(fireAngle));
+                            HomingLaserProjectile projectile = new HomingLaserProjectile(
+                                    this.obstaclePane,
+                                    new Point2D(this.emitterPosition.getX(), this.emitterPosition.getY()), // New Point2D for safety
+                                    initialDir,
+                                    this.projectileSpeed,
+                                    this.projectileTurnRateDeg,
+                                    this.projectileLifespanSecs,
+                                    Main.character
+                            );
+                            Main.activeProjectiles.add(projectile);
                         }
                     }
-                } else { // Should have transitioned already, but as a fallback
-                    currentState = LauncherState.COOLDOWN;
-                    stateTimerSecs = 0.0;
+                    projectilesFiredThisVolley = numToFire; // Mark volley as complete
                 }
+
+                // After firing the spread (which happens effectively instantly in one update frame), transition to COOLDOWN.
+                // The stateTimerSecs for FIRING doesn't really apply here if it's an instant spread.
+                // If FIRING state had a duration (e.g. for a sustained beam or continuous fire),
+                // then stateTimerSecs would be checked.
+                currentState = LauncherState.COOLDOWN;
+                stateTimerSecs = 0.0; // Reset timer for COOLDOWN state
+                // No need to change emitter color here, COOLDOWN state will handle it.
                 break;
 
             case COOLDOWN:

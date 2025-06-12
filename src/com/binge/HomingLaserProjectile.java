@@ -4,6 +4,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
+import java.util.ArrayList; // Added for checkCollisionWithObstacles
 
 public class HomingLaserProjectile {
 
@@ -154,6 +155,62 @@ public class HomingLaserProjectile {
     // Setter for isActive, e.g., when lifespan ends or collision occurs
     public void setActive(boolean active) {
         this.isActive = active;
+        if (!this.isActive) {
+            removeFromPane(); // Automatically remove from pane when deactivated
+        }
+    }
+
+    public boolean checkCollisionWithObstacles(java.util.ArrayList<Obstacle> obstacles) {
+        if (!isActive) {
+            return false; // Already inactive, no need to check
+        }
+
+        for (Obstacle obs : obstacles) {
+            if (obs == null || !obs.body.isVisible()) { // Basic sanity checks, skip invisible obstacles
+                continue;
+            }
+
+            // Determine projectile's current radius (assuming it's a Circle)
+            double projectileRadius = DEFAULT_RADIUS; // From HomingLaserProjectile class
+            if (this.body instanceof Circle) {
+                projectileRadius = ((Circle) this.body).getRadius();
+            }
+
+            // --- Collision with CircleObstacle ---
+            if (obs instanceof CircleObstacle) {
+                CircleObstacle circleObs = (CircleObstacle) obs;
+                // CircleObstacle's 'pos' is its center, 'body' is a Circle shape
+                if (circleObs.body instanceof Circle) {
+                    double obsRadius = ((Circle)circleObs.body).getRadius();
+                    double distSq = this.position.distanceSquared(circleObs.pos);
+                    double sumRadii = projectileRadius + obsRadius;
+                    if (distSq < sumRadii * sumRadii) {
+                        this.setActive(false); // Deactivates and removes from pane
+                        return true; // Collision detected
+                    }
+                }
+            }
+            // --- Collision with RectangleObstacle (Using AABB for now) ---
+            else if (obs instanceof RectangleObstacle) {
+                RectangleObstacle rectObs = (RectangleObstacle) obs;
+                // Using Axis-Aligned Bounding Box (AABB) intersection as a temporary measure.
+                // This is less accurate for rotated rectangles than OBB.
+                if (this.body != null && rectObs.body != null && rectObs.body.isVisible()) {
+                    // Ensure projectile body is also visible for collision
+                    if (!this.body.isVisible()) return false;
+
+                    javafx.geometry.Bounds projBounds = this.body.getBoundsInParent();
+                    javafx.geometry.Bounds obsBounds = rectObs.body.getBoundsInParent();
+
+                    if (projBounds.intersects(obsBounds)) {
+                        this.setActive(false); // Deactivates and calls removeFromPane()
+                        return true; // Collision detected
+                    }
+                }
+            }
+            // Add more 'else if' for other solid obstacle types if necessary
+        }
+        return false; // No collision with any obstacle
     }
 
     // Getter for the body, if needed externally (e.g. for adding to different layers)

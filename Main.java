@@ -206,20 +206,28 @@ public class Main extends Application {
         Iterator<HomingLaserProjectile> projectileIterator = activeProjectiles.iterator();
         while (projectileIterator.hasNext()) {
             HomingLaserProjectile projectile = projectileIterator.next();
-            projectile.update(FIXED_PHYSICS_DT); // FIXED_PHYSICS_DT is from Main class
+            projectile.update(FIXED_PHYSICS_DT); // Update movement, lifespan, etc.
 
-            if (!projectile.isActive()) { // Check if projectile deactivated itself (e.g. lifespan)
-                projectile.removeFromPane(); // Assumes projectile knows its pane
-                projectileIterator.remove();
-                continue; // Move to next projectile
+            // Check for collision with static obstacles first
+            // If projectile hits an obstacle, its checkCollisionWithObstacles->setActive(false)
+            // will also call removeFromPane().
+            if (projectile.isActive()) { // Only check obstacle collision if still active after update
+                projectile.checkCollisionWithObstacles(currentSublevel.obstacles);
             }
 
-            if (projectile.checkCollisionWithPlayer(character)) {
-                // Projectile's checkCollisionWithPlayer already sets itself inactive
-                character.revive(); // Player is hit
-                projectile.removeFromPane(); // Ensure it's removed visually
+            // Then, if still active (didn't hit an obstacle), check for player collision
+            // If projectile hits player, its checkCollisionWithPlayer->setActive(false)
+            // will also call removeFromPane().
+            if (projectile.isActive()) {
+                if (projectile.checkCollisionWithPlayer(character)) {
+                    character.revive(); // Player is hit
+                }
+            }
+
+            // Finally, remove from list if inactive for any reason (lifespan, hit obstacle, hit player)
+            if (!projectile.isActive()) {
+                // projectile.removeFromPane() was already called by setActive(false)
                 projectileIterator.remove();
-                // Potentially add sound effect or particle effect for explosion here
             }
         }
         // --- End Homing Laser Projectile ---
