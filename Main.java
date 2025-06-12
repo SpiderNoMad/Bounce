@@ -1,5 +1,6 @@
 package com.binge;
 
+import com.binge.HomingLaserProjectile;
 import javafx.animation.Animation;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
@@ -36,6 +37,7 @@ public class Main extends Application {
     // containers
     public static Level currentLevel = new Level(0);
     public static Sublevel currentSublevel = new Sublevel(0);
+    public static ArrayList<HomingLaserProjectile> activeProjectiles = new ArrayList<>();
 
     // For fixed timestep physics
     public static Timeline timeline;
@@ -199,6 +201,36 @@ public class Main extends Application {
         if (currentSublevel.goal != null) {
             currentSublevel.goal.checkCollision(character, 0, 0, Main.FIXED_PHYSICS_DT);
         }
+
+        // --- Homing Laser Projectile Update and Collision ---
+        Iterator<HomingLaserProjectile> projectileIterator = activeProjectiles.iterator();
+        while (projectileIterator.hasNext()) {
+            HomingLaserProjectile projectile = projectileIterator.next();
+            projectile.update(FIXED_PHYSICS_DT); // Update movement, lifespan, etc.
+
+            // Check for collision with static obstacles first
+            // If projectile hits an obstacle, its checkCollisionWithObstacles->setActive(false)
+            // will also call removeFromPane().
+            if (projectile.isActive()) { // Only check obstacle collision if still active after update
+                projectile.checkCollisionWithObstacles(currentSublevel.obstacles);
+            }
+
+            // Then, if still active (didn't hit an obstacle), check for player collision
+            // If projectile hits player, its checkCollisionWithPlayer->setActive(false)
+            // will also call removeFromPane().
+            if (projectile.isActive()) {
+                if (projectile.checkCollisionWithPlayer(character)) {
+                    character.revive(); // Player is hit
+                }
+            }
+
+            // Finally, remove from list if inactive for any reason (lifespan, hit obstacle, hit player)
+            if (!projectile.isActive()) {
+                // projectile.removeFromPane() was already called by setActive(false)
+                projectileIterator.remove();
+            }
+        }
+        // --- End Homing Laser Projectile ---
 
         // 6. Update position IF NO OBSTACLE COLLISION handled position
         // If an obstacle collision occurred, its handleCollision should have set the correct position.

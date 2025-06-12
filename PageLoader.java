@@ -3,7 +3,11 @@ package com.binge;
 import com.binge.LaserObstacle;
 import com.binge.LaserObstacle.LaserOrientation;
 import com.binge.SpinningLaserObstacle;
+import com.binge.TrackingLaserObstacle;
+import com.binge.HomingMissileLauncherObstacle;
+import com.binge.SpiralMissileLauncherObstacle;
 import java.io.*;
+import java.util.Arrays; // For error message
 import java.util.Random;
 
 import javafx.application.Platform;
@@ -122,7 +126,7 @@ public class PageLoader {
                 } else if (line.equals("initial position") ||line.equals("CircleObstacle") ||
                         line.equals("RectangleObstacle") || line.equals("Coin") ||
                         line.equals("SizeShifter") || line.equals("GrapplePoint") || line.equals("Checkpoint") ||
-                        line.equals("CircleTrap") || line.equals("Goal") || line.equals("Lock") || line.equals("LaserObstacle") || line.equals("VerticalLaserObstacle") || line.equals("SpinningLaserObstacle")) {
+                        line.equals("CircleTrap") || line.equals("Goal") || line.equals("Lock") || line.equals("LaserObstacle") || line.equals("VerticalLaserObstacle") || line.equals("SpinningLaserObstacle") || line.equals("TrackingLaserObstacle") || line.equals("HomingMissileLauncherObstacle") || line.equals("SpiralMissileLauncherObstacle")) {
                     section = line;
                 } else {
                     String[] tokens = line.split("\\s+");
@@ -351,6 +355,125 @@ public class PageLoader {
                                         isPulsingSpin, minThicknessSpin, maxThicknessSpin, pulseDurationSpin // New params
                                 );
                                 sublevel.obstacles.add(spinningLaser);
+                            }
+                            break;
+                        case "TrackingLaserObstacle":
+                            // Expected format: emitterX emitterY rotationSpeedDeg detectionRange beamLength chargeSecs fireSecs cooldownSecs [initialAngleDeg]
+                            if (tokens.length >= 8) {
+                                double emitterX = Double.parseDouble(tokens[0]);
+                                double emitterY = Double.parseDouble(tokens[1]);
+                                double rotationSpeedDeg = Double.parseDouble(tokens[2]);
+                                double detectionRange = Double.parseDouble(tokens[3]);
+                                double beamLength = Double.parseDouble(tokens[4]);
+                                double chargeSecs = Double.parseDouble(tokens[5]);
+                                double fireSecs = Double.parseDouble(tokens[6]);
+                                double cooldownSecs = Double.parseDouble(tokens[7]);
+
+                                double initialAngleDeg = 0.0; // Default initial angle
+                                if (tokens.length >= 9) {
+                                    initialAngleDeg = Double.parseDouble(tokens[8]);
+                                }
+
+                                Point2D emitterPos = new Point2D(emitterX, emitterY);
+
+                                TrackingLaserObstacle trackingLaser = new TrackingLaserObstacle(
+                                        sublevel.pane,
+                                        emitterPos,
+                                        rotationSpeedDeg,
+                                        detectionRange,
+                                        beamLength,
+                                        chargeSecs,
+                                        fireSecs,
+                                        cooldownSecs,
+                                        initialAngleDeg
+                                );
+                                sublevel.obstacles.add(trackingLaser);
+                            }
+                            break;
+                        case "HomingMissileLauncherObstacle":
+                            // New Format: emitterX emitterY rotSpeedDeg detectRange lockonSecs fireInterval numProjectilesInSpread spreadAngleDeg cooldownSecs projSpeed projTurnRateDeg projLifespan [initialAngleDeg]
+                            if (tokens.length >= 12) { // Now 12 mandatory parameters
+                                double emitterX = Double.parseDouble(tokens[0]);
+                                double emitterY = Double.parseDouble(tokens[1]);
+                                double rotSpeedDeg = Double.parseDouble(tokens[2]);
+                                double detectRange = Double.parseDouble(tokens[3]);
+                                double lockonSecs = Double.parseDouble(tokens[4]);
+                                double fireInterval = Double.parseDouble(tokens[5]); // Still parsed, though current spread logic might not use it
+                                int numProjectilesInSpread = Integer.parseInt(tokens[6]); // Formerly volleySize
+                                double spreadAngleDegParam = Double.parseDouble(tokens[7]); // New spread angle param
+                                double cooldownSecs = Double.parseDouble(tokens[8]);      // Index shifted
+                                double projSpeed = Double.parseDouble(tokens[9]);         // Index shifted
+                                double projTurnRateDeg = Double.parseDouble(tokens[10]); // Index shifted
+                                double projLifespan = Double.parseDouble(tokens[11]);    // Index shifted
+
+                                double initialAngleDeg = 0.0; // Default initial angle
+                                if (tokens.length >= 13) { // Index shifted
+                                    initialAngleDeg = Double.parseDouble(tokens[12]);
+                                }
+
+                                Point2D emitterPos = new Point2D(emitterX, emitterY);
+
+                                HomingMissileLauncherObstacle launcher = new HomingMissileLauncherObstacle(
+                                        sublevel.pane,
+                                        emitterPos,
+                                        rotSpeedDeg,
+                                        detectRange,
+                                        lockonSecs,
+                                        fireInterval,
+                                        numProjectilesInSpread, // Passed as numProjectilesInSpread
+                                        spreadAngleDegParam,  // New argument
+                                        cooldownSecs,
+                                        projSpeed,
+                                        projTurnRateDeg,
+                                        projLifespan,
+                                        initialAngleDeg
+                                );
+                                sublevel.obstacles.add(launcher);
+                            } else {
+                                System.err.println("HomingMissileLauncherObstacle: Not enough parameters. Expected at least 12, got " + tokens.length + " for line: " + java.util.Arrays.toString(tokens));
+                            }
+                            break;
+                        case "SpiralMissileLauncherObstacle":
+                            // Expected format: emitterX emitterY initialAimRotSpeedDeg spiralRotSpeedDeg detectionRange aimTimeSecs spiralFireDurSecs fireIntervalSecs cooldownSecs projSpeed projTurnRateDeg projLifespanSecs [initialAngleDeg]
+                            if (tokens.length >= 12) { // 12 mandatory parameters
+                                double emitterX = Double.parseDouble(tokens[0]);
+                                double emitterY = Double.parseDouble(tokens[1]);
+                                double initialAimRotSpeedDeg = Double.parseDouble(tokens[2]);
+                                double spiralRotSpeedDeg = Double.parseDouble(tokens[3]);
+                                double detectionRange = Double.parseDouble(tokens[4]);
+                                double aimTimeSecs = Double.parseDouble(tokens[5]);
+                                double spiralFireDurSecs = Double.parseDouble(tokens[6]);
+                                double fireIntervalSecs = Double.parseDouble(tokens[7]);
+                                double cooldownSecs = Double.parseDouble(tokens[8]);
+                                double projSpeed = Double.parseDouble(tokens[9]);
+                                double projTurnRateDeg = Double.parseDouble(tokens[10]);
+                                double projLifespanSecs = Double.parseDouble(tokens[11]);
+
+                                double initialAngleDeg = 0.0; // Default initial angle
+                                if (tokens.length >= 13) {
+                                    initialAngleDeg = Double.parseDouble(tokens[12]);
+                                }
+
+                                Point2D emitterPos = new Point2D(emitterX, emitterY);
+
+                                SpiralMissileLauncherObstacle spiralLauncher = new SpiralMissileLauncherObstacle(
+                                        sublevel.pane, // Pass the sublevel's pane
+                                        emitterPos,
+                                        initialAimRotSpeedDeg,
+                                        spiralRotSpeedDeg,
+                                        detectionRange,
+                                        aimTimeSecs,
+                                        spiralFireDurSecs,
+                                        fireIntervalSecs,
+                                        cooldownSecs,
+                                        projSpeed,
+                                        projTurnRateDeg,
+                                        projLifespanSecs,
+                                        initialAngleDeg
+                                );
+                                sublevel.obstacles.add(spiralLauncher);
+                            } else {
+                                System.err.println("SpiralMissileLauncherObstacle: Not enough parameters. Expected at least 12, got " + tokens.length + " for line: " + java.util.Arrays.toString(tokens));
                             }
                             break;
                     }
